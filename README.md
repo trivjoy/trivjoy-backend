@@ -37,8 +37,6 @@ yarn start
 | `/users/profile`  | GET    | Get user profile      | YES             |         |
 | `/users/:id`      | GET    | Get one user by id    |                 |         |
 | `/users`          | GET    | Get all users         |                 |         |
-| `/users`          | DELETE | Delete all users      |                 | YES     |
-| `/users/:id`      | DELETE | Delete one user by id | YES             |         |
 | `/users/:id`      | PUT    | Update one user by id |                 |         |
 
 Example Data users:
@@ -59,16 +57,16 @@ Example Data users:
 }
 ```
 
-## Items
+## Trip
 
-| Endpoint           | Method | Description           | isAuthenticated | isAdmin |
-| ------------------ | ------ | --------------------- | --------------- | ------- |
-| `/items`           | GET    | Get all items         |                 |         |
-| `/items?q=keyword` | GET    | Search for items      |                 |         |
-| `/items`           | POST   | Create new idea       | YES             |         |
-| `/items`           | DELETE | Delete all items      |                 | YES     |
-| `/items/:id`       | DELETE | Delete one idea by id | YES             |         |
-| `/items/:id`       | PUT    | Update one idea by id | YES             |         |
+| Endpoint          | Method | Description           | isAuthenticated | isAdmin |
+| ----------------- | ------ | --------------------- | --------------- | ------- |
+| `/trip`           | GET    | Get all trip          |                 |         |
+| `/trip?q=keyword` | GET    | Search for trip       |                 |         |
+| `/trip`           | POST   | Create new idea       | YES             |         |
+| `/trip`           | DELETE | Delete all trip       |                 | YES     |
+| `/trip/:id`       | DELETE | Delete one idea by id | YES             |         |
+| `/trip/:id`       | PUT    | Update one idea by id | YES             |         |
 
 Example Data trip:
 
@@ -93,10 +91,10 @@ Example Data trip:
     "date_departure": ISODate("01/05/2019 12:12"),
     "date_return": ISODate("05/05/2019 12:00"),
     "budget": 2000000,
-    "pictures":{
-        "http://domain.com/images/1.png",
-        "http://domain.com/images/2.png"
-    },
+     "pictures":[
+        {"image":"http://domain.com/images/1.png"},
+        {"image":"http://domain.com/images/2.png"}
+    ],
    "users_joined": [
        ObjectId('aoio2i3o2k32k')
        ObjectId('aoio2i3o2k32k')
