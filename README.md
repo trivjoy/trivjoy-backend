@@ -69,18 +69,17 @@ Example Data:
 
 ```json
 {
-  "_id": ObjectID(),
-  "id": 1,
-  "title": "",
-  "description": "",
-  "author": "",
-  "date": "",
-  "slug": "",
-  "images": [
-    "/assets/images/picture.jpg",
-    "/assets/images/picture.jpg",
-    "/assets/images/picture.jpg"
+  "_id": ObjectId("5c7d518d26dd3414b1dac304"),
+  "user_id": ObjectId("989832u4i2jkrjfkdjfisjdr"),
+  "title": "trip to Kebumen",
+  "date_departure": ISODate("01/05/2019 12:12"),
+  "date_return": ISODate("05/05/2019 12:00"),
+  "budget": 2000000,
+  "pictures": [
+    "http://domain.com/images/1.png",
+    "http://domain.com/images/2.png"
   ],
+  "users_joined": [ObjectId(), ObjectId(), ObjectId()],
   "details": "<p></p>"
 }
 ```
