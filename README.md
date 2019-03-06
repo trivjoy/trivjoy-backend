@@ -41,7 +41,7 @@ yarn start
 | `/users/:id`      | DELETE | Delete one user by id | YES             |         |
 | `/users/:id`      | PUT    | Update one user by id |                 |         |
 
-Example Data:
+Example Data users:
 
 ```json
 {
@@ -70,7 +70,7 @@ Example Data:
 | `/items/:id`       | DELETE | Delete one idea by id | YES             |         |
 | `/items/:id`       | PUT    | Update one idea by id | YES             |         |
 
-Example Data:
+Example Data trip:
 
 ```json
 {
