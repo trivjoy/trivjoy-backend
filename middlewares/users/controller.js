@@ -74,7 +74,7 @@ const controller = {
         salt: 0,
         password: 0
       })
-      // console.log(foundUser)
+      console.log(foundUser)
     }
 
     res.status(200).send({
