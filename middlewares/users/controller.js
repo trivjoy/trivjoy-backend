@@ -37,49 +37,68 @@ const controller = {
     }
     // console.log(user)
     const foundUser = await User.findOne({ email: user.email })
-    // console.log(foundUser)
+    console.log(foundUser)
     const comparePassword = await bcrypt.compare(
       user.password,
       foundUser.password
     )
-    console.log(comparePassword)
+    // console.log(comparePassword)
     const payload = {
-      sub: foundUser._id
+      sub: foundUser._id,
+      name: foundUser.name,
+      email: foundUser.email,
+      phone: foundUser.phone,
+      gender: foundUser.male,
+      city: foundUser.city,
+      avatar: foundUser.avatar,
+      age: foundUser.age
     }
     // console.log(payload)
     const token = await jwt.sign(payload, process.env.SECRET)
     // console.log('token : ', token)
     res.status(200).send({
       message: 'Login',
-      foundUser: {
-        name: foundUser.name,
-        email: foundUser.email
-      },
       authenticated: comparePassword,
       token: token
     })
   },
   getProfile: async (req, res, next) => {
     const token = req.headers.authorization.split(' ')[1]
-    console.log(token)
-    try {
-      const decoded = await jwt.verify(token, process.env.SECRET)
-      console.log(decoded)
-      res.status(200).send({
-        text: 'success',
-        token: token
+    // console.log(token)
+
+    const decodedUser = await jwt.verify(token, process.env.SECRET)
+    console.log(decodedUser)
+
+    if (decodedUser.sub) {
+      const foundUser = await User.findById(decodedUser.sub, {
+        salt: 0,
+        password: 0
       })
-    } catch (error) {
-      res.status(404).send({
-        text: 'error'
-      })
+      // console.log(foundUser)
     }
+
+    res.status(200).send({
+      message: 'Get my profile',
+      decodedUser: decodedUser
+    })
   },
   getUserById: async (req, res, next) => {
-    const foundUser = await User.findOne()
+    const foundUser = await User.findOne({ _id: req.params.id })
+
+    const user = {
+      _id: foundUser._id,
+      name: foundUser.name,
+      email: foundUser.email,
+      phone: foundUser.phone,
+      gender: foundUser.gender,
+      city: foundUser.city,
+      avatar: foundUser.avatar,
+      age: foundUser.age
+    }
+
     res.status(200).send({
       text: 'success',
-      foundUser: foundUser
+      foundUser: user
     })
   }
 }

@@ -7,6 +7,6 @@ router.get('/', controller.getRoot)
 router.post('/register', controller.postRegister)
 router.post('/login', controller.postLogin)
 router.get('/profile', controller.getProfile)
-router.get('/user', controller.getUserById)
+router.get('/:id', controller.getUserById)
 
 module.exports = router
