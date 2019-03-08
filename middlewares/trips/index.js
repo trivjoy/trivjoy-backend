@@ -4,7 +4,7 @@ const router = express.Router()
 const controller = require('./controller')
 
 router.get('/', controller.getRoot)
-router.post('/addtrip', controller.postTrip)
-router.get('/card', controller.getTrip)
+router.post('/', controller.postTrip)
+router.get('/', controller.getTrip)
 
 module.exports = router

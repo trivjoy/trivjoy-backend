@@ -6,12 +6,6 @@ const AutoIncrement = require('mongoose-sequence')(mongoose)
 const UserSchema = mongoose.Schema({
   name: String,
   email: String,
-  phone: String,
-  gender: String,
-  city: String,
-  avatar: String,
-  age: Number,
-  addres: String,
   salt: String,
   password: String
 })
