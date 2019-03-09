@@ -65,6 +65,7 @@ Example Data users:
 | `/trip?q=keyword` | GET    | Search for trip       |                 |         |
 | `/trip`           | POST   | Create new idea       | YES             |         |
 | `/trip`           | DELETE | Delete all trip       |                 | YES     |
+| `/trip/:id`       | GET | GET one idea by id | YES             |         |
 | `/trip/:id`       | DELETE | Delete one idea by id | YES             |         |
 | `/trip/:id`       | PUT    | Update one idea by id | YES             |         |
 

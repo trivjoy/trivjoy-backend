@@ -2,10 +2,20 @@ require('dotenv').config()
 const mongoose = require('../../config/mongoose')
 const AutoIncrement = require('mongoose-sequence')(mongoose)
 
+const Schema = mongoose.Schema
+
 // User schema
-const TripSchema = mongoose.Schema({
-  name: String,
-  email: String
+const TripSchema = Schema({
+  title: String,
+  tourDestination: String,
+  dateFrom: Date,
+  dateTo: Date,
+  budget: Number,
+  peopleMin: Number,
+  peopleMax: Number,
+  image: String,
+  description: String,
+  id_user: { type: Schema.Types.ObjectId, ref: 'User' }
 })
 
 // plug the AutoIncrement plugin into the schema to create auto incremented id
@@ -17,6 +27,6 @@ TripSchema.plugin(AutoIncrement, {
 })
 
 // User model => users collection
-const Trip = mongoose.model('Trip', TripSchema)
+const Trip = mongoose.model('trip', TripSchema)
 
 module.exports = Trip
