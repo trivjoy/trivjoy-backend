@@ -9,6 +9,7 @@ const controller = {
   },
   postTrip: async (req, res, next) => {
     const token = req.headers.authorization.split(' ')[1]
+
     const decodedUser = await jwt.verify(token, process.env.SECRET)
 
     if (decodedUser.id) {
