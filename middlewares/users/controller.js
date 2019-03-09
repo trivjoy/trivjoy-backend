@@ -4,9 +4,15 @@ const User = require('./model')
 const controller = {
   getRoot: async (req, res, next) => {
     const foundUser = await User.find()
+    const allUser = foundUser.map(user => {
+      users = {
+        name: user.name
+      }
+      return users
+    })
     res.status(200).send({
       message: 'Users',
-      foundUser
+      test: allUser
     })
   },
   postRegister: async (req, res, next) => {
@@ -32,11 +38,9 @@ const controller = {
     const user = {
       ...req.body
     }
-    // console.log(user)
     const foundUser = await User.findOne({ email: user.email }, null, {
       lean: true
     })
-    // console.log(foundUser)
     const comparePassword = await bcrypt.compare(
       user.password,
       foundUser.password
@@ -47,14 +51,11 @@ const controller = {
       })
     } else {
       const { password, salt, ...user } = foundUser
-      console.log(foundUser)
 
-      // console.log(payload)
       const token = await jwt.sign({ id: user._id }, process.env.SECRET)
-      // console.log('token : ', token)
+
       res.status(200).send({
         message: 'Login',
-        // authenticated: comparePassword,
         token: token
       })
     }
@@ -62,10 +63,7 @@ const controller = {
 
   getProfile: async (req, res, next) => {
     const token = req.headers.authorization.split(' ')[1]
-    // console.log(token)
-
     const decodedUser = await jwt.verify(token, process.env.SECRET)
-    console.log(decodedUser)
 
     if (decodedUser.id) {
       const foundUser = await User.findById(decodedUser.id, {
@@ -80,10 +78,9 @@ const controller = {
     }
   },
   getUserById: async (req, res, next) => {
-    const foundUser = await User.findOne({ _id: req.params.id })
-
+    const foundUser = await User.findOne({ id: req.params.id })
     const user = {
-      _id: foundUser._id,
+      id: foundUser._id,
       name: foundUser.name,
       email: foundUser.email,
       phone: foundUser.phone,
@@ -110,6 +107,35 @@ const controller = {
         foundUser
       })
     }
+  },
+  updateUserById: async (req, res, next) => {
+    console.log(req.body.name)
+    const salt = await bcrypt.genSalt(10)
+    const hashedPassword = await bcrypt.hash(req.body.password, salt)
+    const updateUser = {
+      ...req.body,
+      salt: salt,
+      password: hashedPassword
+    }
+    const foundUser = await User.findOneAndUpdate(
+      { id: req.params.id },
+      { $set: updateUser },
+      (err, doc) => {
+        if (err) {
+          return err
+        }
+        return doc
+      }
+    )
+    const resultUser = {
+      ...foundUser._doc,
+      salt: null,
+      password: null
+    }
+    res.status(200).send({
+      text: `update by ${req.params.id} sucess`,
+      resultUser
+    })
   }
 }
 
