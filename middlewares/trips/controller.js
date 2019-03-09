@@ -1,7 +1,6 @@
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const Trip = require('./model')
-const helpers = require('../../helpers')
 const controller = {
   getRoot: (req, res, next) => {
     res.status(200).send({
@@ -50,7 +49,9 @@ const controller = {
     })
   },
   deleteTrip: async (req, res) => {
-    const 
+    res.status(200).send({
+      message: `delete trip by id`
+    })
   }
 }
 
