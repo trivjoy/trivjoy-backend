@@ -10,27 +10,47 @@ const controller = {
   },
   postTrip: async (req, res, next) => {
     const token = req.headers.authorization.split(' ')[1]
-    const decodedToken = await helpers.verifyToken(token)
+    const decodedUser = await jwt.verify(token, process.env.SECRET)
 
-    if (decodedToken.id) {
+    if (decodedUser.id) {
       const newTrip = {
-     ...req.body
-    }
-    const result = await Trip.create(newTrip)
-    res.status(200).send({
-      message: 'Add Trip',
-      result: result
-    })
+        ...req.body,
+        id_user: decodedUser.id
+      }
+      const result = await Trip.create(newTrip)
+      res.status(200).send({
+        message: 'Add Trip',
+        result: result
+      })
     } else {
       res.status(401).json({})
     }
   },
   getTrip: async (req, res, next) => {
-    const result = await Trip.findOne()
+    const token = req.headers.authorization.split(' ')[1]
+    const decodedUser = await jwt.verify(token, process.env.SECRET)
+    if (decodedUser.id) {
+      const result = await Trip.findOne({ id: req.params.id })
+
+      res.status(200).send({
+        message: 'Get Trip',
+        result: result
+      })
+    } else {
+      res.status(401).send({
+        message: 'Error'
+      })
+    }
+  },
+  getTrips: async (req, res, next) => {
+    const result = await Trip.find()
     res.status(200).send({
       message: 'Get Trip',
       result: result
     })
+  },
+  deleteTrip: async (req, res) => {
+    const 
   }
 }
 
