@@ -96,15 +96,15 @@ const controller = {
     })
   },
   deleterUserById: async (req, res, next) => {
-    const foundUser = await User.findOneAndRemove({ _id: req.params.id })
+    const foundUser = await User.findOneAndRemove({ id: req.params.id })
     if (foundUser === null) {
       res.status(401).send({
         text: `deleted failed`
       })
     } else {
       res.status(200).send({
-        text: `delete by ${req.params.id} sucess`,
-        foundUser
+        text: `delete user from id : ${req.params.id} sucess`,
+        user: foundUser.name
       })
     }
   },
