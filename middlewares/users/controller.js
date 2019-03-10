@@ -4,16 +4,23 @@ const User = require('./model')
 const controller = {
   getRoot: async (req, res, next) => {
     const foundUser = await User.find()
-    const allUser = foundUser.map(user => {
-      users = {
-        name: user.name
-      }
-      return users
-    })
-    res.status(200).send({
-      message: 'Users',
-      test: allUser
-    })
+    if (foundUser.length === 0) {
+      res.status(200).send({
+        message: 'Users',
+        users: null
+      })
+    } else {
+      const allUser = foundUser.map(user => {
+        users = {
+          name: user.name
+        }
+        return users
+      })
+      res.status(200).send({
+        message: 'Users',
+        users: allUser
+      })
+    }
   },
   postRegister: async (req, res, next) => {
     const salt = await bcrypt.genSalt(10)
@@ -25,14 +32,25 @@ const controller = {
       password: hashedPassword
     }
 
-    const result = await User.create(newUser)
-    res.status(200).send({
-      message: 'Register',
-      user: {
-        name: result.name,
-        email: result.email
-      }
+    const searchUser = await User.find()
+    const filterUser = searchUser.filter(user => {
+      return req.body.email === user.email || req.body.phone === user.phone
     })
+    if (filterUser.length === 0) {
+      const result = await User.create(newUser)
+      res.status(200).send({
+        message: 'Register',
+        user: {
+          name: result.name,
+          email: result.email
+        }
+      })
+    } else {
+      res.status(401).send({
+        message: 'Register',
+        user: 'data already exists'
+      })
+    }
   },
   postLogin: async (req, res, next) => {
     const user = {
@@ -41,23 +59,28 @@ const controller = {
     const foundUser = await User.findOne({ email: user.email }, null, {
       lean: true
     })
-    const comparePassword = await bcrypt.compare(
-      user.password,
-      foundUser.password
-    )
-    if (comparePassword === false) {
+
+    if (foundUser === null) {
       res.status(401).send({
-        error: 'error'
+        message: 'User Not found'
       })
     } else {
-      const { password, salt, ...user } = foundUser
-
-      const token = await jwt.sign({ id: user._id }, process.env.SECRET)
-
-      res.status(200).send({
-        message: 'Login',
-        token: token
-      })
+      const comparePassword = await bcrypt.compare(
+        user.password,
+        foundUser.password
+      )
+      if (comparePassword === false) {
+        res.status(401).send({
+          error: 'error'
+        })
+      } else {
+        const { password, salt, ...user } = foundUser
+        const token = await jwt.sign({ id: user._id }, process.env.SECRET)
+        res.status(200).send({
+          message: 'Login',
+          token: token
+        })
+      }
     }
   },
 
@@ -78,22 +101,35 @@ const controller = {
     }
   },
   getUserById: async (req, res, next) => {
-    const foundUser = await User.findOne({ id: req.params.id })
-    const user = {
-      id: foundUser._id,
-      name: foundUser.name,
-      email: foundUser.email,
-      phone: foundUser.phone,
-      gender: foundUser.gender,
-      city: foundUser.city,
-      avatar: foundUser.avatar,
-      age: foundUser.age
-    }
+    if (!Number(req.params.id)) {
+      res.status(400).send({
+        message: 'Not Number'
+      })
+    } else {
+      const foundUser = await User.findOne({ id: req.params.id })
+      if (foundUser === null) {
+        res.status(400).send({
+          message: 'fail message',
+          foundUser: 'User not exists'
+        })
+      } else {
+        const user = {
+          id: foundUser._id,
+          name: foundUser.name,
+          email: foundUser.email,
+          phone: foundUser.phone,
+          gender: foundUser.gender,
+          city: foundUser.city,
+          avatar: foundUser.avatar,
+          age: foundUser.age
+        }
 
-    res.status(200).send({
-      text: 'success',
-      foundUser: user
-    })
+        res.status(200).send({
+          message: 'success',
+          foundUser: user
+        })
+      }
+    }
   },
   deleterUserById: async (req, res, next) => {
     const foundUser = await User.findOneAndRemove({ id: req.params.id })
@@ -109,7 +145,6 @@ const controller = {
     }
   },
   updateUserById: async (req, res, next) => {
-    console.log(req.body.name)
     const salt = await bcrypt.genSalt(10)
     const hashedPassword = await bcrypt.hash(req.body.password, salt)
     const updateUser = {
