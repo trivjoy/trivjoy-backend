@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const Trip = require('./model')
+const User = require('../users/model')
 const controller = {
   getRoot: (req, res, next) => {
     res.status(200).send({
@@ -26,15 +27,26 @@ const controller = {
       res.status(401).json({})
     }
   },
-  getTrip: async (req, res, next) => {
+  getTripById: async (req, res, next) => {
     const token = req.headers.authorization.split(' ')[1]
     const decodedUser = await jwt.verify(token, process.env.SECRET)
     if (decodedUser.id) {
-      const result = await Trip.findOne({ id: req.params.id })
+      const getTrip = await Trip.findOne({ id: req.params.id })
+      const getUser = await User.findOne({ _id: decodedUser.id })
+
+      const resultUser = {
+        name: getUser.name,
+        email: getUser.email,
+        phone: getUser.phone,
+        gender: getUser.gender,
+        city: getUser.city,
+        avatar: getUser.avatar,
+        age: getUser.age
+      }
 
       res.status(200).send({
         message: 'Get Trip',
-        result: result
+        result: [{ Trip: getTrip }, { User: resultUser }]
       })
     } else {
       res.status(401).send({
@@ -47,11 +59,6 @@ const controller = {
     res.status(200).send({
       message: 'Get Trip',
       result: result
-    })
-  },
-  deleteTrip: async (req, res) => {
-    res.status(200).send({
-      message: `delete trip by id`
     })
   }
 }

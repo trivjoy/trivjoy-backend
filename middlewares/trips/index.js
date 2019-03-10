@@ -5,6 +5,6 @@ const controller = require('./controller')
 
 router.post('/', controller.postTrip)
 router.get('/', controller.getTrips)
-router.get('/:id', controller.getTrip)
-router.delete('/:id', controller.deleteTrip)
+router.get('/:id', controller.getTripById)
+
 module.exports = router
