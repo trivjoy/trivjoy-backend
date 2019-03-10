@@ -6,7 +6,7 @@ const controller = {
     const foundUser = await User.find()
     if (foundUser.length === 0) {
       res.status(200).send({
-        message: 'Users',
+        message: 'Users Not found',
         users: null
       })
     } else {
@@ -132,45 +132,68 @@ const controller = {
     }
   },
   deleterUserById: async (req, res, next) => {
-    const foundUser = await User.findOneAndRemove({ id: req.params.id })
+    const token = req.headers.authorization.split(' ')[1]
+    const decodedUser = await jwt.verify(token, process.env.SECRET)
+    const foundUser = await User.findOne({ _id: decodedUser.id })
+
     if (foundUser === null) {
       res.status(401).send({
-        text: `deleted failed`
+        message: `deleted failed data not there`
       })
     } else {
-      res.status(200).send({
-        text: `delete user from id : ${req.params.id} sucess`,
-        user: foundUser.name
-      })
+      if (foundUser.id === Number(req.params.id)) {
+        const removeUser = await User.findOneAndRemove({
+          id: req.params.id
+        })
+        res.status(200).send({
+          message: 'delete success',
+          User: removeUser
+        })
+      } else {
+        res.status(404).send({
+          message: 'delete failed id tidak ada'
+        })
+      }
     }
   },
   updateUserById: async (req, res, next) => {
-    const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash(req.body.password, salt)
-    const updateUser = {
-      ...req.body,
-      salt: salt,
-      password: hashedPassword
-    }
-    const foundUser = await User.findOneAndUpdate(
-      { id: req.params.id },
-      { $set: updateUser },
-      (err, doc) => {
-        if (err) {
-          return err
-        }
-        return doc
+    const token = req.headers.authorization.split(' ')[1]
+    const decodedUser = await jwt.verify(token, process.env.SECRET)
+    const findUser = await User.findOne({ _id: decodedUser.id })
+    console.log(findUser)
+
+    if (findUser.id !== Number(req.params.id)) {
+      res.status(404).send({
+        message: 'id Not found'
+      })
+    } else {
+      const salt = await bcrypt.genSalt(10)
+      const hashedPassword = await bcrypt.hash(req.body.password, salt)
+      const updateUser = {
+        ...req.body,
+        salt: salt,
+        password: hashedPassword
       }
-    )
-    const resultUser = {
-      ...foundUser._doc,
-      salt: null,
-      password: null
+      const foundUser = await User.findOneAndUpdate(
+        { id: req.params.id },
+        { $set: updateUser },
+        (err, doc) => {
+          if (err) {
+            return err
+          }
+          return doc
+        }
+      )
+      const resultUser = {
+        ...foundUser._doc,
+        salt: null,
+        password: null
+      }
+      res.status(200).send({
+        text: `update by ${req.params.id} sucess`,
+        resultUser
+      })
     }
-    res.status(200).send({
-      text: `update by ${req.params.id} sucess`,
-      resultUser
-    })
   }
 }
 
