@@ -1,28 +1,27 @@
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+
 const User = require('./model')
+
 const controller = {
-  getRoot: async (req, res, next) => {
-    const foundUser = await User.find()
-    if (foundUser.length === 0) {
+  //////////////////////////////////////////////////////////////////////////////
+  getUsers: async (req, res, next) => {
+    const users = await User.find({})
+
+    if (users.length === 0) {
       res.status(200).send({
-        message: 'Users Not found',
-        users: null
+        message: 'Users not found'
       })
     } else {
-      const allUser = foundUser.map(user => {
-        users = {
-          name: user.name
-        }
-        return users
-      })
       res.status(200).send({
         message: 'Users',
-        users: allUser
+        users: users
       })
     }
   },
-  postRegister: async (req, res, next) => {
+
+  //////////////////////////////////////////////////////////////////////////////
+  register: async (req, res, next) => {
     const salt = await bcrypt.genSalt(10)
     const hashedPassword = await bcrypt.hash(req.body.password, salt)
 
@@ -32,14 +31,16 @@ const controller = {
       password: hashedPassword
     }
 
-    const searchUser = await User.find()
-    const filterUser = searchUser.filter(user => {
+    const searchUser = await User.find({}, { salt: 0, password: 0 })
+    const userExist = searchUser.find(user => {
       return req.body.email === user.email || req.body.phone === user.phone
     })
-    if (filterUser.length === 0) {
+
+    if (!userExist) {
       const result = await User.create(newUser)
+
       res.status(200).send({
-        message: 'Register',
+        message: 'Register success',
         user: {
           name: result.name,
           email: result.email
@@ -47,49 +48,60 @@ const controller = {
       })
     } else {
       res.status(401).send({
-        message: 'Register',
-        user: 'data already exists'
+        message: 'Register failed',
+        user: 'User already exist'
       })
     }
   },
-  postLogin: async (req, res, next) => {
+
+  //////////////////////////////////////////////////////////////////////////////
+  login: async (req, res, next) => {
     const user = {
       ...req.body
     }
+
     const foundUser = await User.findOne({ email: user.email }, null, {
       lean: true
     })
 
     if (foundUser === null) {
       res.status(401).send({
-        message: 'User Not found'
+        message: 'User not found'
       })
     } else {
       const comparePassword = await bcrypt.compare(
         user.password,
         foundUser.password
       )
+
       if (comparePassword === false) {
         res.status(401).send({
-          error: 'error'
+          message: 'Login failed'
         })
       } else {
-        // const { password, salt, ...user } = foundUser
-        const token = await jwt.sign({ id: user._id }, process.env.SECRET)
+        const token = await jwt.sign(
+          {
+            sub: foundUser._id,
+            id: foundUser.id
+          },
+          process.env.SECRET
+        )
+
         res.status(200).send({
-          message: 'Login',
+          message: 'Login success',
           token: token
         })
       }
     }
   },
 
+  //////////////////////////////////////////////////////////////////////////////
   getProfile: async (req, res, next) => {
     try {
       const token = req.headers.authorization.split(' ')[1]
       const decodedUser = await jwt.verify(token, process.env.SECRET)
 
-      const foundUser = await User.findById(decodedUser.id, {
+      const foundUser = await User.findById(decodedUser.sub, {
         salt: 0,
         password: 0
       })
@@ -103,98 +115,103 @@ const controller = {
       })
     }
   },
+
+  //////////////////////////////////////////////////////////////////////////////
   getUserById: async (req, res, next) => {
     if (!Number(req.params.id)) {
       res.status(400).send({
-        message: 'Not Number'
+        message: 'ID is not a number'
       })
     } else {
-      const foundUser = await User.findOne({ id: req.params.id })
-      if (foundUser === null) {
+      const user = await User.findOne(
+        { id: req.params.id },
+        { salt: 0, password: 0 }
+      )
+
+      if (user === null) {
         res.status(400).send({
-          message: 'fail message',
-          foundUser: 'User not exists'
+          message: 'User not found'
         })
       } else {
-        const user = {
-          id: foundUser._id,
-          name: foundUser.name,
-          email: foundUser.email,
-          phone: foundUser.phone,
-          gender: foundUser.gender,
-          city: foundUser.city,
-          avatar: foundUser.avatar,
-          age: foundUser.age
-        }
-
         res.status(200).send({
-          message: 'success',
-          foundUser: user
+          message: 'Get one user by id',
+          user: user
         })
       }
     }
   },
-  deleterUserById: async (req, res, next) => {
+
+  //////////////////////////////////////////////////////////////////////////////
+  deleteUserById: async (req, res, next) => {
     const token = req.headers.authorization.split(' ')[1]
-    const decodedUser = await jwt.verify(token, process.env.SECRET)
-    const foundUser = await User.findOne({ _id: decodedUser.id })
+    const decoded = await jwt.verify(token, process.env.SECRET)
 
-    if (foundUser === null) {
-      res.status(401).send({
-        message: `deleted failed data not there`
-      })
-    } else {
-      if (foundUser.id === Number(req.params.id)) {
-        const removeUser = await User.findOneAndRemove({
-          id: req.params.id
-        })
-        res.status(200).send({
-          message: 'delete success',
-          User: removeUser
+    try {
+      const foundUser = await User.findOne({ id: Number(req.params.id) })
+
+      if (foundUser.id !== decoded.id) {
+        res.status(401).send({
+          message: `You are not allowed to delete that user`
         })
       } else {
-        res.status(404).send({
-          message: 'delete failed id tidak ada'
+        const removedUser = await User.findOneAndRemove(
+          {
+            id: req.params.id
+          },
+          { salt: 0, password: 0 }
+        )
+
+        res.status(200).send({
+          message: 'Delete user success',
+          removedUser: removedUser
         })
       }
+    } catch (error) {
+      res.send({
+        message: 'User not found'
+      })
     }
   },
+
+  //////////////////////////////////////////////////////////////////////////////
   updateUserById: async (req, res, next) => {
     const token = req.headers.authorization.split(' ')[1]
-    const decodedUser = await jwt.verify(token, process.env.SECRET)
-    const findUser = await User.findOne({ _id: decodedUser.id })
-    console.log(findUser)
 
-    if (findUser.id !== Number(req.params.id)) {
-      res.status(404).send({
-        message: 'id Not found'
-      })
-    } else {
-      const salt = await bcrypt.genSalt(10)
-      const hashedPassword = await bcrypt.hash(req.body.password, salt)
-      const updateUser = {
-        ...req.body,
-        salt: salt,
-        password: hashedPassword
-      }
-      const foundUser = await User.findOneAndUpdate(
-        { id: req.params.id },
-        { $set: updateUser },
-        (err, doc) => {
-          if (err) {
-            return err
-          }
-          return doc
+    try {
+      const decoded = await jwt.verify(token, process.env.SECRET)
+      const foundUser = await User.findOne({ id: Number(req.params.id) })
+
+      if (foundUser.id !== decoded.id) {
+        res.status(401).send({
+          message: 'You are not authorized to update this user'
+        })
+      } else {
+        const salt = await bcrypt.genSalt(10)
+        const hashedPassword = await bcrypt.hash(req.body.password, salt)
+
+        const updatedUser = {
+          ...req.body,
+          salt: salt,
+          password: hashedPassword
         }
-      )
-      const resultUser = {
-        ...foundUser._doc,
-        salt: null,
-        password: null
+
+        const foundUser = await User.findOneAndUpdate(
+          { id: Number(req.params.id) },
+          { $set: updatedUser },
+          {
+            fields: { salt: 0, password: 0 }, // exclude secrets
+            new: true // the latest update
+          }
+        )
+
+        res.status(200).send({
+          text: `Updated user success`,
+          foundUser: foundUser
+        })
       }
-      res.status(200).send({
-        text: `update by ${req.params.id} sucess`,
-        resultUser
+    } catch (error) {
+      res.send({
+        message: 'You are not authenticated'
       })
     }
   }
