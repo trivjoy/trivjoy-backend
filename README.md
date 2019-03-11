@@ -59,31 +59,41 @@ Example Data users:
 
 ## Trip
 
-| Endpoint          | Method | Description           | isAuthenticated | isAdmin |
-| ----------------- | ------ | --------------------- | --------------- | ------- |
-| `/trip`           | GET    | Get all trip          |                 |         |
-| `/trip?q=keyword` | GET    | Search for trip       |                 |         |
-| `/trip`           | POST   | Create new idea       | YES             |         |
-| `/trip`           | DELETE | Delete all trip       |                 | YES     |
-| `/trip/:id`       | GET | GET one idea by id | YES             |         |
-| `/trip/:id`       | DELETE | Delete one idea by id | YES             |         |
-| `/trip/:id`       | PUT    | Update one idea by id | YES             |         |
+| Endpoint             | Method | Description                              | isAuthenticated |
+| -------------------- | ------ | ---------------------------------------- | --------------- |
+| `/trips`             | GET    | Get all trips                            |                 |
+| `/trips?q=keyword`   | GET    | Search for trips                         |                 |
+| `/trips`             | POST   | Create new trip                          | YES             |
+| `/trips`             | DELETE | Delete all trips                         |                 |
+| `/trips/:id`         | GET    | Get one trip by id                       | YES             |
+| `/trips/:id`         | DELETE | Delete one trip by id                    | YES             |
+| `/trips/:id`         | PUT    | Update one trip by id                    | YES             |
+| `/trips/:id/request` | PUT    | Request to join trip, by other user      | YES             |
+| `/trips/:id/approve` | PUT    | Approve to let user join trip, by author | YES             |
 
-Example Data trip:
+Example Data:
 
 ```json
 {
   "_id": ObjectId("5c7d518d26dd3414b1dac304"),
-  "user_id": ObjectId("989832u4i2jkrjfkdjfisjdr"),
-  "title": "trip to Kebumen",
-  "date_departure": ISODate("01/05/2019 12:12"),
-  "date_return": ISODate("05/05/2019 12:00"),
+  "author": ObjectId("989832u4i2jkrjfkdjfisjdr"),
+  "title": "Keliling Pantai Kebumen",
+  "destination": "Kebumen, Jawa Tengah, Indonesia",
+  "dateFrom": "2019-03-26T18:23:37.000Z",
+  "dateTo": "2019-03-30T18:23:37.000Z",
   "budget": 2000000,
-  "pictures": [
-    "http://domain.com/images/1.png",
-    "http://domain.com/images/2.png"
+  "image": "https://upload.wikimedia.org/wikipedia/commons/1/1e/Default-avatar.jpg",
+  "description": "Keliling pantai 100 kali yuk biar sehat.",
+  "peopleMin": 1,
+  "peopleMax": 5,
+  "users_requested": [
+    ObjectId(),
+    ObjectId(),
+    ObjectId(),
+    ObjectId(),
+    ObjectId(),
+    ObjectId()
   ],
-  "users_joined": [ObjectId(), ObjectId(), ObjectId()],
-  "details": "<p></p>"
+  "users_joined": [ObjectId(), ObjectId(), ObjectId()]
 }
 ```

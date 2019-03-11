@@ -99,9 +99,9 @@ const controller = {
   getProfile: async (req, res, next) => {
     try {
       const token = req.headers.authorization.split(' ')[1]
-      const decodedUser = await jwt.verify(token, process.env.SECRET)
+      const decoded = await jwt.verify(token, process.env.SECRET)
 
-      const foundUser = await User.findById(decodedUser.sub, {
+      const foundUser = await User.findById(decoded.sub, {
         salt: 0,
         password: 0
       })

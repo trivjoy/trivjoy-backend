@@ -11,14 +11,26 @@ const TripSchema = Schema({
   dateFrom: Date,
   dateTo: Date,
   budget: Number,
-  peopleMin: Number,
-  peopleMax: Number,
   image: String,
   description: String,
-  userId: {
+  peopleMin: Number,
+  peopleMax: Number,
+  author: {
     type: Schema.Types.ObjectId,
     ref: 'User'
-  }
+  },
+  users_requested: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  ],
+  users_joined: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  ]
 })
 
 // plug the AutoIncrement plugin into the schema to create auto incremented id

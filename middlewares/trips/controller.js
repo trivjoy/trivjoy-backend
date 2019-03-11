@@ -1,94 +1,82 @@
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+
 const Trip = require('./model')
-const User = require('../users/model')
+
 const controller = {
-  getRoot: (req, res, next) => {
+  //////////////////////////////////////////////////////////////////////////////
+  getTrips: async (req, res, next) => {
     res.status(200).send({
-      message: 'Trip'
+      message: 'Get all trips',
+      trips: await Trip.find()
     })
   },
-  postTrip: async (req, res, next) => {
+
+  //////////////////////////////////////////////////////////////////////////////
+  createTrip: async (req, res, next) => {
     try {
       const token = req.headers.authorization.split(' ')[1]
-      const decodedUser = await jwt.verify(token, process.env.SECRET)
-      const getUser = await User.findOne({ _id: decodedUser.id })
-      if (getUser === null) {
-        res.status(401).json({
-          message: 'id not there'
-        })
-      } else {
-        if (String(getUser._id) === decodedUser.id) {
-          const newTrip = {
-            ...req.body,
-            id_user: decodedUser.id
-          }
-          const result = await Trip.create(newTrip)
-          res.status(200).send({
-            message: 'Add Trip',
-            result: result
-          })
-        } else {
-          res.status(401).json({})
-        }
+      const decoded = await jwt.verify(token, process.env.SECRET)
+
+      const newTrip = {
+        ...req.body,
+        author: decoded.sub
       }
+
+      const result = await Trip.create(newTrip)
+
+      res.status(200).send({
+        message: 'Created trip',
+        result: result
+      })
     } catch (error) {
       res.status(401).json({
-        message: 'token not there'
+        message: 'You are not authorized'
       })
     }
   },
+
+  //////////////////////////////////////////////////////////////////////////////
   getTripById: async (req, res, next) => {
-    try {
-      const getTrip = await Trip.findOne({
-        id: req.params.id
-      }).populate('id_user', '-password -salt')
-      if (getTrip === null) {
-        res.status(401).send({
-          message: 'Get Trip not there'
-        })
-      } else {
-        res.status(200).send({
-          message: 'Get Trip',
-          result: getTrip
-        })
-      }
-    } catch (error) {
-      res.status(404).send({
-        message: 'must to login. to get token'
-      })
-    }
-  },
-  getTrips: async (req, res, next) => {
-    const result = await Trip.find()
-    res.status(200).send({
-      message: 'Get Trip',
-      result: result
-    })
-  },
-  deleteTripById: async (req, res, next) => {
-    const token = req.headers.authorization.split(' ')[1]
-    const decodedUser = await jwt.verify(token, process.env.SECRET)
-    //console.log(decodedUser.id)
-    const getTrip = await Trip.findOne({ id: req.params.id })
-    if (getTrip === null) {
+    const result = await Trip.findOne({
+      id: Number(req.params.id)
+    }).populate('author', '-salt -password')
+
+    if (!result) {
       res.status(401).send({
-        text: `delete trip failed by ${req.params.id} because ${
-          req.params.id
-        } not there`
+        message: 'Trip does not exist'
       })
     } else {
-      if (decodedUser.id == getTrip.id_user) {
-        const foundTrip = await Trip.findOneAndRemove({
-          id: req.params.id
+      res.status(200).send({
+        message: 'Get trip by id',
+        result: result
+      })
+    }
+  },
+
+  //////////////////////////////////////////////////////////////////////////////
+  deleteTripById: async (req, res, next) => {
+    const token = req.headers.authorization.split(' ')[1]
+    const decoded = await jwt.verify(token, process.env.SECRET)
+    const result = await Trip.findOne({ id: Number(req.params.id) })
+
+    if (!result) {
+      res.status(401).send({
+        message: 'Trip is not found'
+      })
+    } else {
+      if (decoded.sub === String(result.author._id)) {
+        const deletedTrip = await Trip.findOneAndRemove({
+          id: Number(req.params.id)
         })
+
         res.status(200).send({
-          text: `delete trip succsess by ${req.params.id}`,
-          foundTrip: foundTrip
+          text: `Deleted trip success`,
+          deletedTrip: deletedTrip
         })
       } else {
         res.status(401).send({
-          text: `delete trip failed by ${req.params.id}`
+          text: `You are not authorized to delete this trip`
         })
       }
     }
