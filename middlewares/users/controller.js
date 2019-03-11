@@ -6,7 +6,7 @@ const User = require('./model')
 const controller = {
   //////////////////////////////////////////////////////////////////////////////
   getUsers: async (req, res, next) => {
-    const users = await User.find({})
+    const users = await User.find({}, { salt: 0, password: 0 })
 
     if (users.length === 0) {
       res.status(200).send({
