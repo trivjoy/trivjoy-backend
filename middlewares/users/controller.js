@@ -74,7 +74,7 @@ const controller = {
           error: 'error'
         })
       } else {
-        const { password, salt, ...user } = foundUser
+        // const { password, salt, ...user } = foundUser
         const token = await jwt.sign({ id: user._id }, process.env.SECRET)
         res.status(200).send({
           message: 'Login',
@@ -85,18 +85,21 @@ const controller = {
   },
 
   getProfile: async (req, res, next) => {
-    const token = req.headers.authorization.split(' ')[1]
-    const decodedUser = await jwt.verify(token, process.env.SECRET)
+    try {
+      const token = req.headers.authorization.split(' ')[1]
+      const decodedUser = await jwt.verify(token, process.env.SECRET)
 
-    if (decodedUser.id) {
       const foundUser = await User.findById(decodedUser.id, {
         salt: 0,
         password: 0
       })
-      console.log(foundUser)
       res.status(200).send({
         message: 'Get my profile',
         User: foundUser
+      })
+    } catch (err) {
+      res.status(404).send({
+        message: 'failed'
       })
     }
   },
