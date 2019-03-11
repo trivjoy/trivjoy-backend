@@ -11,11 +11,26 @@ const TripSchema = Schema({
   dateFrom: Date,
   dateTo: Date,
   budget: Number,
-  peopleMin: Number,
-  peopleMax: Number,
   image: String,
   description: String,
-  id_user: { type: Schema.Types.ObjectId, ref: 'User' }
+  peopleMin: Number,
+  peopleMax: Number,
+  author: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  users_requested: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  ],
+  users_joined: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  ]
 })
 
 // plug the AutoIncrement plugin into the schema to create auto incremented id
@@ -27,6 +42,6 @@ TripSchema.plugin(AutoIncrement, {
 })
 
 // User model => users collection
-const Trip = mongoose.model('trip', TripSchema)
+const Trip = mongoose.model('Trip', TripSchema)
 
 module.exports = Trip
