@@ -9,48 +9,53 @@ const controller = {
     })
   },
   postTrip: async (req, res, next) => {
-    const token = req.headers.authorization.split(' ')[1]
-
-    const decodedUser = await jwt.verify(token, process.env.SECRET)
-
-    if (decodedUser.id) {
-      const newTrip = {
-        ...req.body,
-        id_user: decodedUser.id
+    try {
+      const token = req.headers.authorization.split(' ')[1]
+      const decodedUser = await jwt.verify(token, process.env.SECRET)
+      const getUser = await User.findOne({ _id: decodedUser.id })
+      if (getUser === null) {
+        res.status(401).json({
+          message: 'id not there'
+        })
+      } else {
+        if (String(getUser._id) === decodedUser.id) {
+          const newTrip = {
+            ...req.body,
+            id_user: decodedUser.id
+          }
+          const result = await Trip.create(newTrip)
+          res.status(200).send({
+            message: 'Add Trip',
+            result: result
+          })
+        } else {
+          res.status(401).json({})
+        }
       }
-      const result = await Trip.create(newTrip)
-      res.status(200).send({
-        message: 'Add Trip',
-        result: result
+    } catch (error) {
+      res.status(401).json({
+        message: 'token not there'
       })
-    } else {
-      res.status(401).json({})
     }
   },
   getTripById: async (req, res, next) => {
-    const token = req.headers.authorization.split(' ')[1]
-    const decodedUser = await jwt.verify(token, process.env.SECRET)
-    if (decodedUser.id) {
-      const getTrip = await Trip.findOne({ id: req.params.id })
-      const getUser = await User.findOne({ _id: decodedUser.id })
-
-      const resultUser = {
-        name: getUser.name,
-        email: getUser.email,
-        phone: getUser.phone,
-        gender: getUser.gender,
-        city: getUser.city,
-        avatar: getUser.avatar,
-        age: getUser.age
+    try {
+      const getTrip = await Trip.findOne({
+        id: req.params.id
+      }).populate('id_user', '-password -salt')
+      if (getTrip === null) {
+        res.status(401).send({
+          message: 'Get Trip not there'
+        })
+      } else {
+        res.status(200).send({
+          message: 'Get Trip',
+          result: getTrip
+        })
       }
-
-      res.status(200).send({
-        message: 'Get Trip',
-        result: [{ Trip: getTrip }, { User: resultUser }]
-      })
-    } else {
-      res.status(401).send({
-        message: 'Error'
+    } catch (error) {
+      res.status(404).send({
+        message: 'must to login. to get token'
       })
     }
   },
