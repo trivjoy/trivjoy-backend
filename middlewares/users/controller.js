@@ -112,11 +112,6 @@ const controller = {
       message: 'Logged out the user'
     })
   },
-  // logout: async (req, res) => {
-  //   res.send({
-  //     message: 'Logged out the user'
-  //   })
-  // },
 
   //////////////////////////////////////////////////////////////////////////////
   getUserById: async (req, res, next) => {
