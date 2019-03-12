@@ -93,17 +93,23 @@ const controller = {
       users_requested: [decoded.sub]
     }
     if (String(result.author) !== decoded.sub) {
-      // console.log(joinUser)
+      let users = joinUser.users_requested.push(decoded.sub)
+      // console.log(joinUser.users_requested.push(decoded.sub))
+      // console.log(decoded.sub)
 
       const foundTrip = await Trip.findOneAndUpdate(
         { id: Number(req.params.id) },
-        { $set: joinUser },
+        { $set: users },
         { new: true }
       )
 
       res.status(200).send({
         message: 'request join',
-        foundTrip
+        joinUser
+      })
+    } else {
+      res.status(401).send({
+        message: 'request join falied because you have a trip'
       })
     }
   },
