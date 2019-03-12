@@ -4,7 +4,7 @@ const router = express.Router()
 const controller = require('./controller')
 
 // seed or insert initial data
-router.post('/seed', controller.seedTrips)
+// router.post('/seed', controller.seedTrips)
 
 router.get('/', controller.getTrips)
 router.post('/', controller.createTrip)
