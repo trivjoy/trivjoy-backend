@@ -4,6 +4,8 @@ const router = express.Router()
 const controller = require('./controller')
 
 router.get('/', controller.getTrips)
+
+// router.post('/', auth.isAuthenticated, controller.createTrip)
 router.post('/', controller.createTrip)
 
 router.put('/:id/request', controller.requestJoin) // by other user
