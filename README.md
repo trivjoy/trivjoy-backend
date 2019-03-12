@@ -61,6 +61,7 @@ Example Data users:
 
 | Endpoint             | Method | Description                              | isAuthenticated |
 | -------------------- | ------ | ---------------------------------------- | --------------- |
+| `/trips/seed`        | GET    | Seed initial dummy trips                 | YES             |
 | `/trips`             | GET    | Get all trips                            |                 |
 | `/trips?q=keyword`   | GET    | Search for trips                         |                 |
 | `/trips`             | POST   | Create new trip                          | YES             |
