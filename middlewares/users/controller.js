@@ -1,7 +1,5 @@
-const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
-
 const User = require('./model')
+const auth = require('../auth/controller')
 
 const controller = {
   //////////////////////////////////////////////////////////////////////////////
@@ -22,13 +20,12 @@ const controller = {
 
   //////////////////////////////////////////////////////////////////////////////
   register: async (req, res, next) => {
-    const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash(req.body.password, salt)
+    const { salt, password } = await auth.encryptPassword(req.body.password)
 
     const newUser = {
       ...req.body,
-      salt: salt,
-      password: hashedPassword
+      salt,
+      password
     }
 
     const searchUser = await User.find({}, { salt: 0, password: 0 })
@@ -55,41 +52,34 @@ const controller = {
   },
 
   //////////////////////////////////////////////////////////////////////////////
-  login: async (req, res, next) => {
-    const user = {
+  login: async (req, res) => {
+    const userLogin = {
       ...req.body
     }
 
-    const foundUser = await User.findOne({ email: user.email }, null, {
-      lean: true
-    })
+    const foundUser = await User.findOne({ email: userLogin.email })
 
     if (foundUser === null) {
       res.status(401).send({
         message: 'User not found'
       })
     } else {
-      const comparePassword = await bcrypt.compare(
-        user.password,
+      const authenticated = await auth.comparePassword(
+        userLogin.password,
         foundUser.password
       )
 
-      if (comparePassword === false) {
+      if (authenticated === false) {
         res.status(401).send({
           message: 'Login failed'
         })
       } else {
-        const token = await jwt.sign(
-          {
-            sub: foundUser._id,
-            id: foundUser.id
-          },
-          process.env.SECRET
-        )
-
+        const token = await auth.createToken(foundUser)
+        const { password, salt, ...user } = foundUser
         res.status(200).send({
           message: 'Login success',
-          token: token
+          token: token,
+          user
         })
       }
     }
@@ -99,7 +89,8 @@ const controller = {
   getProfile: async (req, res, next) => {
     try {
       const token = req.headers.authorization.split(' ')[1]
-      const decoded = await jwt.verify(token, process.env.SECRET)
+
+      const decoded = await auth.verifyToken(token, process.env.SECRET)
 
       const foundUser = await User.findById(decoded.sub, {
         salt: 0,
@@ -114,6 +105,12 @@ const controller = {
         message: 'failed'
       })
     }
+  },
+
+  logout: () => {
+    res.status(200).send({
+      message: 'Logout success'
+    })
   },
 
   //////////////////////////////////////////////////////////////////////////////
@@ -144,17 +141,19 @@ const controller = {
   //////////////////////////////////////////////////////////////////////////////
   deleteUserById: async (req, res, next) => {
     const token = req.headers.authorization.split(' ')[1]
-    const decoded = await jwt.verify(token, process.env.SECRET)
-
-    try {
-      const foundUser = await User.findOne({ id: Number(req.params.id) })
-
-      if (foundUser.id !== decoded.id) {
+    const decoded = await auth.verifyToken(token, process.env.SECRET)
+    const foundUser = await User.findOne({ id: Number(req.params.id) })
+    if (!foundUser) {
+      res.status(401).send({
+        message: `user not there`
+      })
+    } else {
+      if (String(foundUser._id) === decoded.sub) {
         res.status(401).send({
           message: `You are not allowed to delete that user`
         })
       } else {
-        const removedUser = await User.findOneAndRemove(
+        const removedUser = await User.findOneAndRsemove(
           {
             id: req.params.id
           },
@@ -166,52 +165,38 @@ const controller = {
           removedUser: removedUser
         })
       }
-    } catch (error) {
-      res.send({
-        message: 'User not found'
-      })
     }
   },
 
   //////////////////////////////////////////////////////////////////////////////
   updateUserById: async (req, res, next) => {
     const token = req.headers.authorization.split(' ')[1]
+    const decoded = await auth.verifyToken(token, process.env.SECRET)
+    const foundUser = await User.findOne({ id: Number(req.params.id) })
+    if (foundUser.id !== decoded.id) {
+      res.status(401).send({
+        message: 'You are not authorized to update this user'
+      })
+    } else {
+      const { salt, password } = await auth.encryptPassword(req.body.password)
 
-    try {
-      const decoded = await jwt.verify(token, process.env.SECRET)
-      const foundUser = await User.findOne({ id: Number(req.params.id) })
-
-      if (foundUser.id !== decoded.id) {
-        res.status(401).send({
-          message: 'You are not authorized to update this user'
-        })
-      } else {
-        const salt = await bcrypt.genSalt(10)
-        const hashedPassword = await bcrypt.hash(req.body.password, salt)
-
-        const updatedUser = {
-          ...req.body,
-          salt: salt,
-          password: hashedPassword
-        }
-
-        const foundUser = await User.findOneAndUpdate(
-          { id: Number(req.params.id) },
-          { $set: updatedUser },
-          {
-            fields: { salt: 0, password: 0 }, // exclude secrets
-            new: true // the latest update
-          }
-        )
-
-        res.status(200).send({
-          text: `Updated user success`,
-          foundUser: foundUser
-        })
+      const updatedUser = {
+        ...req.body,
+        salt,
+        password
       }
-    } catch (error) {
-      res.send({
-        message: 'You are not authenticated'
+
+      const foundUser = await User.findOneAndUpdate(
+        { id: Number(req.params.id) },
+        { $set: updatedUser },
+        {
+          fields: { salt: 0, password: 0 }, // exclude secrets
+          new: true // the latest update
+        }
+      )
+      res.status(200).send({
+        text: `Updated user success`,
+        foundUser: foundUser
       })
     }
   }
