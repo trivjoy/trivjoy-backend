@@ -75,7 +75,9 @@ const controller = {
         })
       } else {
         const token = await auth.createToken(foundUser)
-        const { password, salt, ...user } = foundUser
+        const { password, salt, ...getuser } = foundUser
+        const user = getuser._doc
+
         res.status(200).send({
           message: 'Login success',
           token: token,
