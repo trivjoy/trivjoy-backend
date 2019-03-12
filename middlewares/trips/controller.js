@@ -50,7 +50,6 @@ const controller = {
       })
     }
   },
-
   //////////////////////////////////////////////////////////////////////////////
   deleteTripById: async (req, res, next) => {
     const token = req.headers.authorization.split(' ')[1]
@@ -68,13 +67,13 @@ const controller = {
       })
     } else {
       if (decoded.sub === String(result.author._id)) {
-        // const deletedTrip = await Trip.findOneAndRemove({
-        //   id: Number(req.params.id)
-        // })
+        const deletedTrip = await Trip.findOneAndRemove({
+          id: Number(req.params.id)
+        })
 
         res.status(200).send({
-          text: `Deleted trip success`
-          // deletedTrip: deletedTrip
+          text: `Deleted trip success`,
+          deletedTrip: deletedTrip
         })
       } else {
         res.status(401).send({
@@ -82,6 +81,38 @@ const controller = {
         })
       }
     }
+  },
+  requestJoin: async (req, res, next) => {
+    const token = req.headers.authorization.split(' ')[1]
+    const decoded = await auth.verifyToken(token, process.env.SECRET)
+    const result = await Trip.findOne({ id: Number(req.params.id) })
+    console.log(result._doc)
+
+    const joinUser = {
+      ...result._doc,
+      users_requested: [decoded.sub]
+    }
+    if (String(result.author) !== decoded.sub) {
+      // console.log(joinUser)
+
+      const foundTrip = await Trip.findOneAndUpdate(
+        { id: Number(req.params.id) },
+        { $set: joinUser },
+        { new: true }
+      )
+
+      res.status(200).send({
+        message: 'request join',
+        foundTrip
+      })
+    }
+  },
+
+  ///////////////////////////////////////////////////////////////////////////
+  requestApprove: (req, res, next) => {
+    res.status(200).send({
+      message: 'request approve'
+    })
   }
 }
 
