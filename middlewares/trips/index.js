@@ -12,7 +12,7 @@ router.get('/', controller.getTrips)
 router.post('/', auth.isAuthenticated, controller.createTrip)
 
 router.put('/:id/request', auth.isAuthenticated, controller.requestJoin) // by other user
-router.put('/:id/approve', controller.requestApprove) // by author
+router.put('/:id/approve', auth.isAuthenticated, controller.requestApprove) // by author
 
 router.get('/:id', controller.getTripById)
 router.delete('/:id', controller.deleteTripById)

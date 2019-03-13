@@ -120,16 +120,41 @@ const controller = {
       })
     }
   },
-
   ///////////////////////////////////////////////////////////////////////////
-  requestApprove: (req, res, next) => {
-    const token = req.headers.authorization.split(' ')[1]
-    //const decoded = await auth.verifyToken(token, process.env.SECRET)
-    //const result = await Trip.findOne({ id: Number(req.params.id) })
-    res.status(200).send({
-      message: 'Request approve user to join'
-    })
+
+  requestApprove: async (req, res, next) => {
+    try {
+      const trip = await Trip.findOne({
+        id: req.params.id,
+        users_joined: { $ne: req.body.approvedUser }
+      })
+
+      if (String(trip.author) !== req.decoded.sub) {
+        throw 'approve failed because you are not trip author'
+      }
+
+      if (trip) {
+        trip.users_requested = trip.users_requested.filter(id => {
+          return id.toString() !== req.body.approvedUser
+        })
+        trip.users_joined.push(req.body.approvedUser)
+        trip.save()
+        res.status(200).send({
+          message: 'Request Approve',
+          updatedTrip: trip
+        })
+      } else {
+        throw 'error'
+      }
+    } catch (err) {
+      console.log(err)
+
+      res.status(400).send({
+        message: 'Error'
+      })
+    }
   }
 }
+//////////////////////////////////////////////////////////////////////////////
 
 module.exports = controller
