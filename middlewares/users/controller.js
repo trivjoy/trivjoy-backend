@@ -57,7 +57,9 @@ const controller = {
       ...req.body
     }
 
-    const foundUser = await User.findOne({ email: userLogin.email })
+    const foundUser = await User.findOne({ email: userLogin.email }, null, {
+      lean: true
+    })
 
     if (foundUser === null) {
       res.status(401).send({
@@ -75,8 +77,7 @@ const controller = {
         })
       } else {
         const token = await auth.createToken(foundUser)
-        const { password, salt, ...getuser } = foundUser
-        const user = getuser._doc
+        const { password, salt, ...user } = foundUser
 
         res.status(200).send({
           message: 'Login success',
