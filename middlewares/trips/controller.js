@@ -13,8 +13,8 @@ const controller = {
   //////////////////////////////////////////////////////////////////////////////
   createTrip: async (req, res, next) => {
     const token = req.headers.authorization.split(' ')[1]
-    const decoded = await auth.verifyToken(token, process.env.SECRET)
-    if (!decoded.sub) {
+
+    if (!req.decoded.sub) {
       res.status(401).send({
         message: 'Wrong created trip'
         // result: result
@@ -22,7 +22,7 @@ const controller = {
     } else {
       const newTrip = {
         ...req.body,
-        author: decoded.sub
+        author: req.decoded.sub
       }
 
       const result = await Trip.create(newTrip)
@@ -88,27 +88,25 @@ const controller = {
 
   //////////////////////////////////////////////////////////////////////////////
   requestJoin: async (req, res, next) => {
-    const token = req.headers.authorization.split(' ')[1]
-    const decoded = await auth.verifyToken(token, process.env.SECRET)
     const result = await Trip.findOne({ id: Number(req.params.id) })
 
-    if (String(result.author) !== decoded.sub) {
+    if (String(result.author) !== req.decoded.sub) {
       const newTrip = await Trip.findOneAndUpdate(
         {
           // find the number id
           id: Number(req.params.id),
           // only if the user does not exist yet in users_requested array
-          users_requested: { $ne: decoded.sub }
+          users_requested: { $ne: req.decoded.sub }
         },
         // add token's sub to users_requested array
-        { $push: { users_requested: decoded.sub } },
+        { $push: { users_requested: req.decoded.sub } },
         { new: true }
       )
 
       if (newTrip) {
         res.status(200).send({
           message: 'Request join',
-          user_requested: decoded.sub,
+          user_requested: req.decoded.sub,
           newTrip
         })
       } else {
@@ -125,6 +123,9 @@ const controller = {
 
   ///////////////////////////////////////////////////////////////////////////
   requestApprove: (req, res, next) => {
+    const token = req.headers.authorization.split(' ')[1]
+    //const decoded = await auth.verifyToken(token, process.env.SECRET)
+    //const result = await Trip.findOne({ id: Number(req.params.id) })
     res.status(200).send({
       message: 'Request approve user to join'
     })
