@@ -1,4 +1,5 @@
 const User = require('./model')
+const helper = require('../../helpers')
 const auth = require('../auth/controller')
 
 const controller = {
@@ -20,35 +21,22 @@ const controller = {
 
   //////////////////////////////////////////////////////////////////////////////
   register: async (req, res, next) => {
-    const { salt, password } = await auth.encryptPassword(req.body.password)
+    const { salt, password } = await helper.encryptPassword(req.body.password)
 
     const newUser = {
       ...req.body,
       salt,
       password
     }
+    const result = await User.create(newUser)
 
-    const searchUser = await User.find({}, { salt: 0, password: 0 })
-    const userExist = searchUser.find(user => {
-      return req.body.email === user.email || req.body.phone === user.phone
+    res.status(200).send({
+      message: 'Register success',
+      user: {
+        name: result.name,
+        email: result.email
+      }
     })
-
-    if (!userExist) {
-      const result = await User.create(newUser)
-
-      res.status(200).send({
-        message: 'Register success',
-        user: {
-          name: result.name,
-          email: result.email
-        }
-      })
-    } else {
-      res.status(401).send({
-        message: 'Register failed',
-        user: 'User already exist'
-      })
-    }
   },
 
   //////////////////////////////////////////////////////////////////////////////
@@ -57,14 +45,16 @@ const controller = {
       ...req.body
     }
 
-    const foundUser = await User.findOne({ email: userLogin.email })
+    const foundUser = await User.findOne({ email: userLogin.email }, null, {
+      lean: true
+    })
 
     if (foundUser === null) {
       res.status(401).send({
         message: 'User not found'
       })
     } else {
-      const authenticated = await auth.comparePassword(
+      const authenticated = await helper.comparePassword(
         userLogin.password,
         foundUser.password
       )
@@ -74,9 +64,8 @@ const controller = {
           message: 'Login failed'
         })
       } else {
-        const token = await auth.createToken(foundUser)
-        const { password, salt, ...getuser } = foundUser
-        const user = getuser._doc
+        const token = await helper.createToken(foundUser)
+        const { password, salt, ...user } = foundUser
 
         res.status(200).send({
           message: 'Login success',
@@ -89,24 +78,16 @@ const controller = {
 
   //////////////////////////////////////////////////////////////////////////////
   getProfile: async (req, res, next) => {
-    try {
-      const token = req.headers.authorization.split(' ')[1]
+    const decoded = req.decoded
 
-      const decoded = await auth.verifyToken(token, process.env.SECRET)
-
-      const foundUser = await User.findById(decoded.sub, {
-        salt: 0,
-        password: 0
-      })
-      res.status(200).send({
-        message: 'Get my profile',
-        User: foundUser
-      })
-    } catch (err) {
-      res.status(404).send({
-        message: 'failed'
-      })
-    }
+    const foundUser = await User.findById(decoded.sub, {
+      salt: 0,
+      password: 0
+    })
+    res.status(200).send({
+      message: 'Get my profile',
+      user: foundUser
+    })
   },
 
   logout: () => {
@@ -142,15 +123,15 @@ const controller = {
 
   //////////////////////////////////////////////////////////////////////////////
   deleteUserById: async (req, res, next) => {
-    const token = req.headers.authorization.split(' ')[1]
-    const decoded = await auth.verifyToken(token, process.env.SECRET)
+    const decoded = req.decoded
     const foundUser = await User.findOne({ id: Number(req.params.id) })
     if (!foundUser) {
       res.status(401).send({
         message: `user not there`
       })
     } else {
-      if (String(foundUser._id) === decoded.sub) {
+      // console.log(String(foundUser._id), decoded.sub)
+      if (String(foundUser._id) !== decoded.sub) {
         res.status(401).send({
           message: `You are not allowed to delete that user`
         })
@@ -163,8 +144,8 @@ const controller = {
         )
 
         res.status(200).send({
-          message: 'Delete user success',
-          removedUser: removedUser
+          message: 'Delete user success'
+          // removedUser: removedUser
         })
       }
     }
@@ -172,15 +153,19 @@ const controller = {
 
   //////////////////////////////////////////////////////////////////////////////
   updateUserById: async (req, res, next) => {
-    const token = req.headers.authorization.split(' ')[1]
-    const decoded = await auth.verifyToken(token, process.env.SECRET)
+    const decoded = req.decoded
+
     const foundUser = await User.findOne({ id: Number(req.params.id) })
-    if (foundUser.id !== decoded.id) {
+    if (!foundUser) {
+      res.status(404).send({
+        message: `Updated user failed`
+      })
+    } else if (foundUser.id !== decoded.id) {
       res.status(401).send({
         message: 'You are not authorized to update this user'
       })
     } else {
-      const { salt, password } = await auth.encryptPassword(req.body.password)
+      const { salt, password } = await helper.encryptPassword(req.body.password)
 
       const updatedUser = {
         ...req.body,

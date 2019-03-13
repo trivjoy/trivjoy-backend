@@ -1,41 +1,44 @@
-const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
+const helpers = require('../../helpers')
 
-module.exports = {
-  encryptPassword: async plainPassword => {
-    const salt = await bcrypt.genSalt(10)
-    const password = await bcrypt.hash(plainPassword, salt)
+const User = require('../users/model')
 
-    return {
-      salt,
-      password
-    }
-  },
-
-  comparePassword: async (password, hash) => {
-    const authenticated = await bcrypt.compare(password, hash)
-
-    return authenticated
-  },
-
-  createToken: async foundUser => {
-    const payload = {
-      sub: foundUser._id,
-      id: foundUser.id
-    }
-
-    const token = await jwt.sign(payload, process.env.SECRET)
-
-    return token
-  },
-
-  verifyToken: async token => {
-    // console.log(decoded)
+const authControllers = {
+  //////////////////////////////////////////////////////////////////////////////
+  // GET TOKEN
+  isAuthenticated: async (req, res, next) => {
     try {
-      const decoded = await jwt.verify(token, process.env.SECRET)
-      return decoded
+      const token = req.headers.authorization.split(' ')[1]
+      const decoded = await helpers.verifyToken(token)
+
+      req.token = token
+      req.decoded = decoded
+
+      next()
     } catch (error) {
-      return error
+      // If failed to get the token
+      res.send({
+        message: 'Token is not exist in headers of Authorization'
+      })
+    }
+  },
+
+  //////////////////////////////////////////////////////////////////////////////
+  // CHECK IF USER ALREADY EXIST
+  isUserExist: async (req, res, next) => {
+    const user = await User.findOne({ email: req.body.email })
+    const searchUser = await User.find({}, { salt: 0, password: 0 })
+    const userExist = searchUser.find(user => {
+      return req.body.email === user.email || req.body.phone === user.phone
+    })
+    // if user does not exist, you can continue
+    if (!userExist) {
+      next()
+    } else {
+      res.send({
+        message: 'User is already exist with that email!'
+      })
     }
   }
 }
+
+module.exports = authControllers
