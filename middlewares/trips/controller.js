@@ -39,6 +39,8 @@ const controller = {
       id: Number(req.params.id)
     }).populate('author', '-salt -password')
 
+    console.log(result)
+
     if (!result) {
       res.status(401).send({
         message: 'Trip does not exist'
@@ -68,13 +70,13 @@ const controller = {
       })
     } else {
       if (decoded.sub === String(result.author._id)) {
-        // const deletedTrip = await Trip.findOneAndRemove({
-        //   id: Number(req.params.id)
-        // })
+        const deletedTrip = await Trip.findOneAndRemove({
+          id: Number(req.params.id)
+        })
 
         res.status(200).send({
-          text: `Deleted trip success`
-          // deletedTrip: deletedTrip
+          text: `Deleted trip success`,
+          deletedTrip: deletedTrip
         })
       } else {
         res.status(401).send({
@@ -82,6 +84,50 @@ const controller = {
         })
       }
     }
+  },
+
+  //////////////////////////////////////////////////////////////////////////////
+  requestJoin: async (req, res, next) => {
+    const token = req.headers.authorization.split(' ')[1]
+    const decoded = await auth.verifyToken(token, process.env.SECRET)
+    const result = await Trip.findOne({ id: Number(req.params.id) })
+
+    if (String(result.author) !== decoded.sub) {
+      const newTrip = await Trip.findOneAndUpdate(
+        {
+          // find the number id
+          id: Number(req.params.id),
+          // only if the user does not exist yet in users_requested array
+          users_requested: { $ne: decoded.sub }
+        },
+        // add token's sub to users_requested array
+        { $push: { users_requested: decoded.sub } },
+        { new: true }
+      )
+
+      if (newTrip) {
+        res.status(200).send({
+          message: 'Request join',
+          user_requested: decoded.sub,
+          newTrip
+        })
+      } else {
+        res.status(400).send({
+          message: 'Request join failed. You already requested'
+        })
+      }
+    } else {
+      res.status(401).send({
+        message: 'Request join failed because you are the trip author'
+      })
+    }
+  },
+
+  ///////////////////////////////////////////////////////////////////////////
+  requestApprove: (req, res, next) => {
+    res.status(200).send({
+      message: 'Request approve user to join'
+    })
   }
 }
 
