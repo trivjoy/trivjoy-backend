@@ -90,9 +90,9 @@ const controller = {
     })
   },
 
-  logout: () => {
+  logout: async (req, res) => {
     res.status(200).send({
-      message: 'Logout success'
+      message: 'Logged out the user'
     })
   },
 
