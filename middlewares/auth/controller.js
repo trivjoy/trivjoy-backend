@@ -34,7 +34,7 @@ const authControllers = {
     if (!userExist) {
       next()
     } else {
-      res.send({
+      res.status(401).send({
         message: 'User is already exist with that email!'
       })
     }
