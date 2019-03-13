@@ -6,7 +6,7 @@ const controller = {
   getTrips: async (req, res, next) => {
     res.status(200).send({
       message: 'Get all trips',
-      trips: await Trip.find()
+      trips: await Trip.find().populate('author', '-salt -password')
     })
   },
 
