@@ -47,9 +47,10 @@ const controller = {
   getTripById: async (req, res, next) => {
     const result = await Trip.findOne({
       id: Number(req.params.id)
-    }).populate('author', '-salt -password')
-
-    console.log(result)
+    })
+      .populate('author', '-salt -password')
+      .populate('users_requested', '-salt -password')
+      .populate('users_joined', '-salt -password')
 
     if (!result) {
       res.status(401).send({
@@ -137,9 +138,9 @@ const controller = {
       const trip = await Trip.findOne({
         id: req.params.id,
         users_joined: { $ne: req.body.approvedUser }
-      })
+      }).populate('author')
 
-      if (String(trip.author) !== req.decoded.sub) {
+      if (String(trip.author._id) !== req.decoded.sub) {
         throw 'approve failed because you are not trip author'
       }
 
