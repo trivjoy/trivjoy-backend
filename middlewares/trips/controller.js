@@ -1,17 +1,16 @@
 const Trip = require('./model')
-const Seed = require('./modelSeed')
+const Seed = require('./dataDummy')
 const auth = require('../../helpers')
 
 const controller = {
   //////////////////////////////////////////////////////////////////////////////
   getTrips: async (req, res, next) => {
     const Trips = await Trip.find().populate('author', '-salt -password')
-    console.log(Trips)
 
     if (Trips.length === 0) {
       res.status(200).send({
-        message: 'Get all trips',
-        trips: await Seed.find().populate('author', '-salt -password')
+        message: 'Get all trips dummy',
+        trips: Seed
       })
     } else {
       res.status(200).send({
