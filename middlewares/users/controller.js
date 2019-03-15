@@ -165,17 +165,9 @@ const controller = {
         message: 'You are not authorized to update this user'
       })
     } else {
-      const { salt, password } = await helper.encryptPassword(req.body.password)
-
-      const updatedUser = {
-        ...req.body,
-        salt,
-        password
-      }
-
       const foundUser = await User.findOneAndUpdate(
         { id: Number(req.params.id) },
-        { $set: updatedUser },
+        { $set: req.body },
         {
           fields: { salt: 0, password: 0 }, // exclude secrets
           new: true // the latest update
