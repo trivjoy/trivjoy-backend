@@ -23,8 +23,8 @@ const controller = {
   //////////////////////////////////////////////////////////////////////////////
   createTrip: async (req, res, next) => {
     const token = req.headers.authorization.split(' ')[1]
-
-    if (!req.decoded.sub) {
+    const decoded = await auth.verifyToken(token, process.env.SECRET)
+    if (!decoded.sub) {
       res.status(401).send({
         message: 'Wrong created trip'
         // result: result
@@ -32,7 +32,7 @@ const controller = {
     } else {
       const newTrip = {
         ...req.body,
-        author: req.decoded.sub
+        author: decoded.sub
       }
 
       const result = await Trip.create(newTrip)
